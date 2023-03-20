@@ -97,15 +97,29 @@ function parse_errors(body)
       }
     end
 
+    local function message(msg_at, rec)
+      local msg = {
+        msg = ffi.string(string_bytes+extra[msg_at]);
+        count = extra[msg_at+1];
+        src_loc = src_loc(extra[msg_at+2], true);
+        notes = {}
+      }
+      local notes_len = extra[msg_at+3];
+      local notes_at = msg_at+4
+      for i = 1,notes_len do
+        local note = extra[notes_at+i-1]
+          if rec then -- format in theory allows recursive notes, assume such maddnes won't be needed for now
+            note = message(note, false)
+          end
+          table.insert(msg.notes, note)
+      end
+      return msg
+    end
+
     local messages = {}
     for msgid = 1,eml_len do
-      msg_pos = extra[eml_start+msgid-1]
-      table.insert(messages, {
-        msg = ffi.string(string_bytes+extra[msg_pos]);
-        count = extra[msg_pos+1];
-        src_loc = src_loc(extra[msg_pos+2], true);
-        notes_len = extra[msg_pos+3];
-      })
+      local msg_at = extra[eml_start+msgid-1]
+      table.insert(messages, message(msg_at, true))
     end
 
     return messages
@@ -178,3 +192,5 @@ function h:send(msg, data)
     self.stdin:write(data)
   end
 end
+
+return h
