@@ -37,30 +37,37 @@ function h.parse_output(self)
     if #self.data < 8+len then
       return
     end
-    print("msg:", kind, len)
+    -- print("msg:", kind, len)
 
     local body = string.sub(self.data,9, 8+len) -- there's a body alright
     local nxt = string.sub(self.data,9+len)
     self.data = #nxt > 0 and nxt or nil
 
+    self._body[kind] = body
+
     local s = h.server_messages
+    local value = body
     if kind == s.zig_version then
       self.zig_version = body
     elseif kind == s.progress then
-      print("progress:", body)
     elseif kind == s.emit_bin_path then
       self.bin_path = body
-      if string.sub(self.bin_path, 1, 1) == '\0' then
+      if string.sub(self.bin_path, 1, 1) == '\0' then -- ??
         self.bin_path = string.sub(self.bin_path,2)
       end
+      value = self.bin_path
     elseif kind == s.error_bundle then
-      self.err_body = body
       self.err_bundle = parse_errors(body)
+      value = self.err_bundle
     elseif kind == s.test_metadata then
-      self.test_meta_body = body
       self.test_metadata = self.parse_test_metadata(body)
+      value = self.err_bundle
     elseif kind == s.test_results then
-      self.test_res_body = body
+      -- TODO
+    end
+
+    if self.cb then
+      local status, res = pcall(cb,kind,value)
     end
   end
 end
@@ -161,9 +168,11 @@ end
 h.__index = h
 
 local uv = vim.loop
-function h.start_server(cmd, args)
+function h.start_server(cmd, args, cb)
   local self = setmetatable({}, h)
   self.stdin = uv.new_pipe(false)
+
+  self._body = {}
 
   self.stderr_hnd = uv.pipe()
   self.stderr = uv.new_pipe()
@@ -173,6 +182,7 @@ function h.start_server(cmd, args)
   end))
 
   self.data = nil
+  self.cb = nil
 
   self.stdout_hnd = uv.pipe()
   self.stdout = uv.new_pipe()
