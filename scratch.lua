@@ -1,4 +1,5 @@
 mod = loadfile 'lua/zigclient/init.lua' ()
+b = loadfile 'lua/zigclient/bundle.lua' ()
 s = mod.zig_server('/home/bfredl/dev/forklift/src/run_ir.zig', false)
 s = mod.zig_server('/home/bfredl/dev/forklift/src/FLIR.zig', true)
 s:send(s.client_messages.update)
