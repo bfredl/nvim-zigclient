@@ -217,6 +217,7 @@ function h.zig_server(entrypoint, test)
   local subcmd = test and 'test' or 'build-exe'
   args = {
     subcmd;
+    '-freference-trace';
     -- '-fno-emit-bin';
    entrypoint;
     "--listen=-";
