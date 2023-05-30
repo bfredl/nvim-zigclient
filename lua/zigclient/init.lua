@@ -27,7 +27,7 @@ function u32(bytes, where)
   return ffi.cast('uint32_t*', bytes)[where or 0]
 end
 
-function h.parse_output(self)
+function h:parse_output()
   while true do
     if self.data == nil or #self.data < 8 then
       return
@@ -61,13 +61,17 @@ function h.parse_output(self)
       value = self.err_bundle
     elseif kind == s.test_metadata then
       self.test_metadata = self.parse_test_metadata(body)
-      value = self.err_bundle
+      value = self.test_metadata
     elseif kind == s.test_results then
       -- TODO
     end
 
     if self.cb then
-      local status, res = pcall(cb,kind,value)
+      local status, res = pcall(self.cb,kind,value)
+      if not status then
+        _G.err = res
+        print('callback error', res)
+      end
     end
   end
 end
@@ -182,7 +186,7 @@ function h.start_server(cmd, args, cb)
   end))
 
   self.data = nil
-  self.cb = nil
+  self.cb = cb
 
   self.stdout_hnd = uv.pipe()
   self.stdout = uv.new_pipe()
@@ -238,6 +242,10 @@ function h:send(msg, data)
   if #data > 0 then
     self.stdin:write(data)
   end
+end
+
+function h:update()
+  self:send(h.client_messages.update)
 end
 
 function h:run_test(nr)

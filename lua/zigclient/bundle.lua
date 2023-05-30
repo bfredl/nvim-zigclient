@@ -34,15 +34,18 @@ function h.process_bundle(bundle)
 end
 
 function h.is_in_base(msg_item, base_path)
+  if not vim.startswith(msg_item.src_path, '/') then
+    return true -- DUBBEL bULL
+  end
   return vim.startswith(msg_item.src_path, base_path) -- BULL
 end
 
 function h.item_to_diag(item, kind, main)
   local diag = {
     bufnr = vim.fn.bufadd(item.src_path);
-    lnum = item.line;
-    col = item.start_col;
-    end_col = item.end_col;
+    lnum = item.line+1;
+    col = item.col_start;
+    end_col = item.col_end;
     -- TODO: main col lol
     message = item.msg;
   }
@@ -62,12 +65,12 @@ function h.item_to_diag(item, kind, main)
   return diag
 end
 
-function h.msg_to_diag(msg, base_path)
-  diags = {}
+function h.msg_to_diag(msg, base_path, diags)
+  diags = diags or {}
   local base_loc
   if h.is_in_base(msg.main, base_path) then
     base_loc = msg.main
-    table.insert(diags, h.item_to_diag(msg, "error"))
+    table.insert(diags, h.item_to_diag(msg.main, "error"))
   end
   for _, item in ipairs(msg.reftrace) do
     if h.is_in_base(item, base_path) then
@@ -87,7 +90,12 @@ function h.msg_to_diag(msg, base_path)
   return diags
 end
 
-function bundle_to_diags()
+function h.bundle_to_diags(bundle, base_path)
+  diags = {}
+  for _,msg in ipairs(bundle) do
+    h.msg_to_diag(msg, base_path, diags)
+  end
+  return diags
 end
 
 return h
