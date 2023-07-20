@@ -57,7 +57,7 @@ function h:parse_output()
       end
       value = self.bin_path
     elseif kind == s.error_bundle then
-      self.err_bundle = parse_errors(body)
+      self.err_bundle = h.parse_errors(body)
       value = self.err_bundle
     elseif kind == s.test_metadata then
       self.test_metadata = self.parse_test_metadata(body)
@@ -76,7 +76,7 @@ function h:parse_output()
   end
 end
 
-function parse_errors(body)
+function h.parse_errors(body)
   extra_len = u32(body)
   string_bytes_len = u32(body,1)
   extra_data = string.sub(body,9,8+extra_len*4)

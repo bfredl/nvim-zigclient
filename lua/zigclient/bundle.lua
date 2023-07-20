@@ -43,7 +43,7 @@ end
 function h.item_to_diag(item, kind, main)
   local diag = {
     bufnr = vim.fn.bufadd(item.src_path);
-    lnum = item.line+1;
+    lnum = item.line;
     col = item.col_start;
     end_col = item.col_end;
     -- TODO: main col lol
